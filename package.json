@@ -1,0 +1,23 @@
+{
+  "name": "stream-consume-promise",
+  "version": "1.0.0",
+  "description": "Consume streams with a promise-returning function",
+  "author": "Stephen Belanger <admin@stephenbelanger.com>",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "tap test.js"
+  },
+  "keywords": [
+    "stream",
+    "promise",
+    "consume",
+    "read"
+  ],
+  "devDependencies": {
+    "tap": "^10.7.2"
+  },
+  "dependencies": {
+    "channel-surfer": "^1.0.1"
+  }
+}
