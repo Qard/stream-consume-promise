@@ -19,5 +19,13 @@
   },
   "dependencies": {
     "channel-surfer": "^1.0.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Qard/stream-consume-promise.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Qard/stream-consume-promise/issues"
+  },
+  "homepage": "https://github.com/Qard/stream-consume-promise#readme"
 }
