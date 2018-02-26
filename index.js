@@ -11,7 +11,7 @@ function consume(stream) {
       const request = await requests.take()
       const size = request.value
       const chunk = stream.read(size)
-      if (!chunk) {
+      if (chunk === null) {
         requests.giveBack(size)
         break
       }
