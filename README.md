@@ -1,5 +1,7 @@
 # stream-consume-promise
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/Qard/stream-consume-promise.svg)](https://greenkeeper.io/)
+
 Consume streams with a promise-based read function.
 
 ## Install
