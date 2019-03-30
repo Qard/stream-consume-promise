@@ -17,9 +17,9 @@ async function main(stream) {
   const read = consume(stream)
   while (true) {
     const chunk = await read(16)
-    if (!chunk) break
+    if (chunk.done) break
 
-    console.log('received', chunk)
+    console.log('received', chunk.value)
   }
 }
 
