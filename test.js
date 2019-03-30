@@ -6,7 +6,7 @@ function uid () {
   return Buffer.from(Math.random().toString(35).substr(2, 16))
 }
 
-tap.test('basics', async (t) => {
+tap.test('basics', (t) => {
   const stream = new PassThrough()
   stream.write('abc')
   stream.write('123567')
@@ -15,45 +15,40 @@ tap.test('basics', async (t) => {
   const read = consume(stream)
 
   // First 3 bytes
-  {
-    const chunk = await read(3)
-    t.match(chunk, {
-      value: Buffer.from('abc'),
-      done: false
-    }, 'received first three bytes')
-  }
-
-  // Second 3 bytes
-  {
-    const chunk = await read(3)
-    t.match(chunk, {
-      value: Buffer.from('123'),
-      done: false
-    }, 'received second three bytes')
-  }
-
-  // Third 3 bytes
-  {
-    const chunk = await read(3)
-    t.match(chunk, {
-      value: Buffer.from('567'),
-      done: false
-    }, 'received third three bytes')
-  }
-
-  // End
-  {
-    const chunk = await read()
-    t.match(chunk, {
-      value: null,
-      done: true
-    }, 'received done flag')
-  }
-
-  t.end()
+  return read(3)
+    .then(chunk => {
+      t.match(chunk, {
+        value: Buffer.from('abc'),
+        done: false
+      }, 'received first three bytes')
+    })
+    // Second 3 bytes
+    .then(() => read(3))
+    .then(chunk => {
+      t.match(chunk, {
+        value: Buffer.from('123'),
+        done: false
+      }, 'received second three bytes')
+    })
+    // Second 3 bytes
+    .then(() => read(3))
+    .then(chunk => {
+      t.match(chunk, {
+        value: Buffer.from('567'),
+        done: false
+      }, 'received third three bytes')
+    })
+    // End
+    .then(() => read())
+    .then(chunk => {
+      t.match(chunk, {
+        value: null,
+        done: true
+      }, 'received done flag')
+    })
 })
 
-tap.test('parallel', async (t) => {
+tap.test('parallel', (t) => {
   const n = 100
   const sent = []
   const stream = new PassThrough()
@@ -70,82 +65,73 @@ tap.test('parallel', async (t) => {
     tasks.push(read())
   }
 
-  const chunks = await Promise.all(tasks)
-  const values = chunks
-    .filter(chunk => !chunk.done)
-    .map(chunk => chunk.value)
+  return Promise.all(tasks)
+    .then(chunks => {
+      const values = chunks
+        .filter(chunk => !chunk.done)
+        .map(chunk => chunk.value)
 
-  t.equal(
-    Buffer.concat(values).toString(),
-    Buffer.concat(sent).toString(),
-    'received value'
-  )
-
-  // End
-  {
-    const chunk = await read()
-    t.match(chunk, {
-      value: null,
-      done: true
-    }, 'received done flag')
-  }
-
-  t.end()
+      t.equal(
+        Buffer.concat(values).toString(),
+        Buffer.concat(sent).toString(),
+        'received value'
+      )
+    })
+    // End
+    .then(() => read())
+    .then(chunk => {
+      t.match(chunk, {
+        value: null,
+        done: true
+      }, 'received done flag')
+    })
 })
 
-tap.test('finalization', async (t) => {
+tap.test('finalization', (t) => {
   const stream = new PassThrough()
   stream.end()
 
   const read = consume(stream)
 
   // End
-  {
-    const chunk = await read()
-    t.match(chunk, {
-      value: null,
-      done: true
-    }, 'received done flag')
-  }
-
-  // End repeats due to finalization
-  {
-    const chunk = await read()
-    t.match(chunk, {
-      value: null,
-      done: true
-    }, 'received done flag again')
-  }
-
-  t.end()
+  return read()
+    .then(chunk => {
+      t.match(chunk, {
+        value: null,
+        done: true
+      }, 'received done flag')
+    })
+    // End repeats due to finalization
+    .then(() => read())
+    .then(chunk => {
+      t.match(chunk, {
+        value: null,
+        done: true
+      }, 'received done flag again')
+    })
 })
 
-tap.test('error finalization', async (t) => {
+tap.test('error finalization', (t) => {
   const error = new Error('test')
   const stream = new PassThrough()
   const read = consume(stream)
   stream.emit('error', error)
 
   // End
-  try {
-    await read()
-    t.fail('should have failed')
-  } catch (err) {
-    t.match(err, error, 'received error')
-  }
-
-  // End repeats due to finalization
-  try {
-    await read()
-    t.fail('should have failed')
-  } catch (err) {
-    t.match(err, error, 'received error again')
-  }
-
-  t.end()
+  return read()
+    .then(
+      () => t.fail('should have failed'),
+      (err) => t.match(err, error, 'received error')
+    )
+    // End repeats due to finalization
+    .then(() => read())
+    .then(
+      () => t.fail('should have failed'),
+      (err) => t.match(err, error, 'received error again')
+    )
 })
 
-tap.test('object streams', async (t) => {
+tap.test('object streams', (t) => {
   const stream = new PassThrough({ objectMode: true })
   stream.setDefaultEncoding('utf8')
   stream.write('abc')
@@ -155,37 +141,35 @@ tap.test('object streams', async (t) => {
   const read = consume(stream)
 
   // First object
-  {
-    const chunk = await read()
-    t.match(chunk, {
-      value: 'abc',
-      done: false
-    }, 'received first object')
-  }
-
-  // Second object
-  {
-    const chunk = await read()
-    t.match(chunk, {
-      value: '123567',
-      done: false
-    }, 'received second object')
-  }
-
-  // End
-  {
-    const chunk = await read()
-    t.match(chunk, {
-      value: null,
-      done: true
-    }, 'received done flag')
-  }
-
-  t.end()
+  return read()
+    .then(chunk => {
+      t.match(chunk, {
+        value: 'abc',
+        done: false
+      }, 'received first object')
+    })
+    // Second object
+    .then(() => read())
+    .then(chunk => {
+      t.match(chunk, {
+        value: '123567',
+        done: false
+      }, 'received second object')
+    })
+    // End
+    .then(() => read())
+    .then(chunk => {
+      t.match(chunk, {
+        value: null,
+        done: true
+      }, 'received done flag')
+    })
 })
 
-tap.test('empty objects', async (t) => {
-  const stream = new PassThrough({ objectMode: true })
+tap.test('empty objects', (t) => {
+  const stream = new PassThrough({
+    objectMode: true
+  })
 
   // Some line reading packages return strings without line endings
   stream.write('line 1')
@@ -196,40 +180,35 @@ tap.test('empty objects', async (t) => {
   const read = consume(stream)
 
   // First line
-  {
-    const chunk = await read()
-    t.match(chunk, {
-      value: 'line 1',
-      done: false
-    }, 'received line 1')
-  }
-
-  // Second line
-  {
-    const chunk = await read()
-    t.match(chunk, {
-      value: '',
-      done: false
-    }, 'received the empty second line')
-  }
-
-  // Third line
-  {
-    const chunk = await read()
-    t.match(chunk, {
-      value: 'line 3',
-      done: false
-    }, 'received line 3')
-  }
-
-  // End
-  {
-    const chunk = await read()
-    t.match(chunk, {
-      value: null,
-      done: true
-    }, 'received done flag')
-  }
-
-  t.end()
+  return read()
+    .then(chunk => {
+      t.match(chunk, {
+        value: 'line 1',
+        done: false
+      }, 'received line 1')
+    })
+    // Second line
+    .then(() => read())
+    .then(chunk => {
+      t.match(chunk, {
+        value: '',
+        done: false
+      }, 'received the empty second line')
+    })
+    // Third line
+    .then(() => read())
+    .then(chunk => {
+      t.match(chunk, {
+        value: 'line 3',
+        done: false
+      }, 'received line 3')
+    })
+    // End
+    .then(() => read())
+    .then(chunk => {
+      t.match(chunk, {
+        value: null,
+        done: true
+      }, 'received done flag')
+    })
 })

@@ -11,25 +11,24 @@ function consume (stream) {
     requests.close()
   }
 
-  stream.on('error', onError)
-  stream.on('readable', async () => {
-    try {
-      while (true) {
-        const request = await requests.take()
+  function onReadable () {
+    requests.take()
+      .then(request => {
         const size = request.value
         const chunk = stream.read(size)
         if (chunk === null) {
           requests.giveBack(size)
-          break
+          return
         }
 
         responses.give(chunk)
-      }
-    } catch (error) {
-      onError(error)
-    }
-  })
+        onReadable()
+      })
+      .catch(onError)
+  }
 
+  stream.on('readable', onReadable)
+  stream.on('error', onError)
   stream.on('end', () => {
     responses.close()
     requests.close()
