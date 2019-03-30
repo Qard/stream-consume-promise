@@ -148,3 +148,92 @@ tap.test('error finalization', async (t) => {
 
   t.end()
 })
+
+tap.test('object streams', async (t) => {
+  const stream = new PassThrough({ objectMode: true})
+  stream.setDefaultEncoding('utf8')
+  stream.write('abc')
+  stream.write('123567')
+  stream.end()
+
+  const read = consume(stream)
+
+  // First object
+  {
+    const chunk = await read()
+    t.match(chunk, {
+      value: 'abc',
+      done: false
+    }, 'received first object')
+  }
+
+  // Second object
+  {
+    const chunk = await read()
+    t.match(chunk, {
+      value: '123567',
+      done: false
+    }, 'received second object')
+  }
+
+  // End
+  {
+    const chunk = await read()
+    t.match(chunk, {
+      value: null,
+      done: true
+    }, 'received done flag')
+  }
+
+  t.end()
+})
+
+tap.test('empty objects', async (t) => {
+  const stream = new PassThrough({ objectMode: true })
+
+  // Some line reading packages return strings without line endings
+  stream.write('line 1')
+  stream.write('')
+  stream.write('line 3')
+  stream.end()
+
+  const read = consume(stream)
+
+  // First line
+  {
+    const chunk = await read()
+    t.match(chunk, {
+      value: 'line 1',
+      done: false
+    }, 'received line 1')
+  }
+
+  // Second line
+  {
+    const chunk = await read()
+    t.match(chunk, {
+      value: '',
+      done: false
+    }, 'received the empty second line')
+  }
+
+  // Third line
+  {
+    const chunk = await read()
+    t.match(chunk, {
+      value: 'line 3',
+      done: false
+    }, 'received line 3')
+  }
+
+  // End
+  {
+    const chunk = await read()
+    t.match(chunk, {
+      value: null,
+      done: true
+    }, 'received done flag')
+  }
+
+  t.end()
+})
