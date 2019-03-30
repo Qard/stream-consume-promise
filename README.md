@@ -16,10 +16,12 @@ const consume = require('stream-consume-promise')
 async function main(stream) {
   const read = consume(stream)
   while (true) {
-    const chunk = await read(16)
-    if (chunk.done) break
+    // The `read(...)` function accepts an optional size.
+    // Omitting will read to the end of the internal buffer.
+    const { done, value } = await read(16)
+    if (done) break
 
-    console.log('received', chunk.value)
+    console.log('received', value)
   }
 }
 
@@ -28,7 +30,7 @@ main(stream)
 
 ---
 
-### Copyright (c) 2017 Stephen Belanger
+### Copyright (c) 2019 Stephen Belanger
 
 #### Licensed under MIT License
 

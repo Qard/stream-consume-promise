@@ -2,8 +2,8 @@ const tap = require('tap')
 const { PassThrough } = require('stream')
 const consume = require('./')
 
-function uid() {
-  return new Buffer(Math.random().toString(35).substr(2, 16))
+function uid () {
+  return Buffer.from(Math.random().toString(35).substr(2, 16))
 }
 
 tap.test('basics', async (t) => {
@@ -18,7 +18,7 @@ tap.test('basics', async (t) => {
   {
     const chunk = await read(3)
     t.match(chunk, {
-      value: new Buffer('abc'),
+      value: Buffer.from('abc'),
       done: false
     }, 'received first three bytes')
   }
@@ -27,7 +27,7 @@ tap.test('basics', async (t) => {
   {
     const chunk = await read(3)
     t.match(chunk, {
-      value: new Buffer('123'),
+      value: Buffer.from('123'),
       done: false
     }, 'received second three bytes')
   }
@@ -36,7 +36,7 @@ tap.test('basics', async (t) => {
   {
     const chunk = await read(3)
     t.match(chunk, {
-      value: new Buffer('567'),
+      value: Buffer.from('567'),
       done: false
     }, 'received third three bytes')
   }
@@ -127,30 +127,26 @@ tap.test('error finalization', async (t) => {
   stream.emit('error', error)
 
   // End
-  {
-    try {
-      const chunk = await read()
-      t.fail('should have failed')
-    } catch (err) {
-      t.match(err, error, 'received error')
-    }
+  try {
+    await read()
+    t.fail('should have failed')
+  } catch (err) {
+    t.match(err, error, 'received error')
   }
 
   // End repeats due to finalization
-  {
-    try {
-      const chunk = await read()
-      t.fail('should have failed')
-    } catch (err) {
-      t.match(err, error, 'received error again')
-    }
+  try {
+    await read()
+    t.fail('should have failed')
+  } catch (err) {
+    t.match(err, error, 'received error again')
   }
 
   t.end()
 })
 
 tap.test('object streams', async (t) => {
-  const stream = new PassThrough({ objectMode: true})
+  const stream = new PassThrough({ objectMode: true })
   stream.setDefaultEncoding('utf8')
   stream.write('abc')
   stream.write('123567')
